@@ -1,3 +1,9 @@
+/**
+ * CustomKeyPage
+ * @flow
+ **/
+'use strict'
+
 import React, {Component} from 'react';
 import {
     StyleSheet,
@@ -13,6 +19,8 @@ import ViewUtils from './../../utils/ViewUtils';
 import LanguageDao, {FLAG_LANGUAGE} from './../../expand/dao/LanguageDao';
 import CheckBox from 'react-native-check-box';
 import ArrayUtils from '../../utils/ArrayUtils';
+
+
 export default class CustomKeyPage extends Component {
     constructor(props) {
         super(props);
@@ -42,6 +50,11 @@ export default class CustomKeyPage extends Component {
 
     _onSave() {
         if (this.state.changeValues.length !== 0){
+            if (this.isRemoveKey) {
+                for (let i =0 ,changeValues =this.state.changeValues;i <changeValues.length;i++) {
+                    ArrayUtils.remove(this.state.dataArray,changeValues[i]);
+                }
+            }
             this.languageDao.save(this.state.dataArray);
         }
         this.props.navigator.pop()
