@@ -1,8 +1,15 @@
 import {
     AsyncStorage
-} from 'react-native'
+} from 'react-native';
+import GitHubTrending from "GitHubTrending";
+export const FLAG_STORAGE = {flag_popular: 'popular', flag_trending: 'trending', flag_my: 'my'};
+
 
 export default class DataRepository {
+    constructor(flag) {
+        this.flag = flag;
+        if (flag === FLAG_STORAGE.flag_trending) this.trending = new GitHubTrending();
+    }
 
     fetchRepository(url) {
         return new Promise((resolve, reject) => {
@@ -39,19 +46,30 @@ export default class DataRepository {
      */
     fetchNetRepository(url) {
         return new Promise((resolve, reject) => {
-            fetch(url)
-                .then(response => response.json())
-                .then(responseJson => {
-                    if (!responseJson) {
-                        reject(new Error('Repository is null.'));
-                        return;
-                    }
-                    resolve(responseJson.items);
-                    this.save2Repository(responseJson.items);
-                })
-                .catch(error => {
-                    reject(error)
-                })
+            if (this.flag === FLAG_STORAGE.flag_trending) {
+                this.trending.fetchTrending(url)
+                    .then(result => {
+                        if (!result) {
+                            reject(new Error('Repository is null.'));
+                            return;
+                        }
+                        this.save2Repository(url, result);
+                    })
+            } else {
+                fetch(url)
+                    .then(response => response.json())
+                    .catch(error => {
+                        reject(error);
+                    })
+                    .then(responseJson => {
+                        if (!responseJson || !responseJson.items) {
+                            reject(new Error('Repository is null.'));
+                            return;
+                        }
+                        resolve(responseJson.items);
+                        this.save2Repository(responseJson.items);
+                    }).done();
+            }
         })
     }
 
@@ -94,9 +112,13 @@ export default class DataRepository {
      * @return {boolean}
      */
     checkDate(longTime) {
-        let cDate = new Date();
-        let tDate = new Date();
-        tDate.setTime(longTime);
-        return !((cDate.getMonth() !== tDate.getMonth()) || (cDate.getDay() !== tDate.getDay()) || (cDate.getHours() - tDate.getHours() > 4))
+        let currentDate = new Date();
+        let targetDate = new Date();
+        targetDate.setTime(longTime);
+        // return !((currentDate.getMonth() !== targetDate.getMonth()) || (currentDate.getDay() !== targetDate.getDay()) || (currentDate.getHours() - targetDate.getHours() > 4))
+        if (currentDate.getMonth() !== targetDate.getMonth()) return false;
+        if (currentDate.getDate() !== targetDate.getDate()) return false;
+        if (currentDate.getHours() - targetDate.getHours() > 4) return false;
+        return true;
     }
 }

@@ -14,7 +14,7 @@ import {
     DeviceEventEmitter
 } from 'react-native';
 import NavigationBar from '../components/NavigationBar';
-import DataRepository from '../expand/dao/DataRepository';
+import DataRepository,{FLAG_STORAGE} from '../expand/dao/DataRepository';
 import ScrollableTabView, {ScrollableTabBar} from 'react-native-scrollable-tab-view';
 import RepositoryCell from '../components/RepositoryCell';
 import LanguageDao, {FLAG_LANGUAGE} from '../expand/dao/LanguageDao';
@@ -59,7 +59,8 @@ export default class PopularPage extends Component {
                 tabBarUnderlineStyle={{backgroundColor: '#e7e7e7', height: 2}}
                 renderTabBar={() => <ScrollableTabBar/>}
             >
-                {this.state.languages.map((v, i) => (v.checked ? <PopularTab key={i} tabLabel={v.name} {...this.props}/> : null))}
+                {this.state.languages.map((v, i) => (v.checked ?
+                    <PopularTab key={i} tabLabel={v.name} {...this.props}/> : null))}
             </ScrollableTabView>)
             : null;
         return (
@@ -78,7 +79,7 @@ export default class PopularPage extends Component {
 class PopularTab extends Component {
     constructor(props) {
         super(props);
-        this.dataRepository = new DataRepository();
+        this.dataRepository = new DataRepository(FLAG_STORAGE.flag_popular);
         this.state = {
             result: '',
             dataSource: new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2}),
@@ -102,11 +103,11 @@ class PopularTab extends Component {
                     dataSource: this.state.dataSource.cloneWithRows(items),
                     isLoading: false
                 });
-                if (result&&result.update_data&&!this.dataRepository.checkDate(result.update_data)){
-                    DeviceEventEmitter.emit('showToast','数据已过时');
+                if (result && result.update_data && !this.dataRepository.checkDate(result.update_data)) {
+                    DeviceEventEmitter.emit('showToast', '数据已过时');
                     return this.dataRepository.fetchNetRepository(url);
-                }else {
-                    DeviceEventEmitter.emit('showToast','显示本地数据');
+                } else {
+                    DeviceEventEmitter.emit('showToast', '显示本地数据');
                 }
             })
             .then(items => {
@@ -114,13 +115,14 @@ class PopularTab extends Component {
                 this.setState({
                     dataSource: this.state.dataSource.cloneWithRows(items)
                 });
-                DeviceEventEmitter.emit('showToast','显示网络数据');
+                DeviceEventEmitter.emit('showToast', '显示网络数据');
             })
             .catch(error => this.setState({
                 result: JSON.stringify(error),
                 isLoading: false
             }));
     }
+
     onSelect(item) {
         this.props.navigator.push({
             component: RepositoryDetail,
@@ -130,6 +132,7 @@ class PopularTab extends Component {
             }
         })
     }
+
     _genFetchUrl(key) {
         return URL + key + QUERY_STR;
     }

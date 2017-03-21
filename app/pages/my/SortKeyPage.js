@@ -1,3 +1,9 @@
+/**
+ * SortKeyPage
+ * @flow
+ **/
+'use strict'
+
 import React, {Component} from 'react';
 import {
     StyleSheet,
@@ -27,7 +33,7 @@ export default class SortKeyPage extends Component {
     }
 
     componentDidMount() {
-        this.languageDao = LanguageDao.init(FLAG_LANGUAGE.flag_key);
+        this.languageDao = LanguageDao.init(this.props.flag);
         this._loadData();
     }
 
@@ -95,6 +101,7 @@ export default class SortKeyPage extends Component {
     }
 
     render() {
+        let title = this.props.flag === FLAG_LANGUAGE.flag_language?'语言排序':'标签排序';
         let rightButton = <TouchableOpacity
             onPress={() => this._onSave()}
         >
@@ -105,10 +112,8 @@ export default class SortKeyPage extends Component {
         return (
             <View style={styles.container}>
                 <NavigationBar
-                    title='我的'
-                    statusBar={{
-                        backgroundColor: '#2196f3'
-                    }}
+                    title={title}
+                    style={{backgroundColor: '#2196f3'}}
                     leftButton={ViewUtils.renderLeftButton(() => {
                         this._onBack();
                     })}

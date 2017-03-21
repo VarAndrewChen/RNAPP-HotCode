@@ -22,8 +22,8 @@ const TRENDING_URL = 'https://github.com/';
 export default class RepositoryDetail extends Component {
     constructor(props) {
         super(props);
-        let url = props.item.html_url;
-        let title= props.item.full_name;
+        let url = props.item.html_url || TRENDING_URL + props.item.fullName;
+        let title = props.item.full_name || props.item.fullName;
         this.state = {
             url: url,
             canGoBack: false,
