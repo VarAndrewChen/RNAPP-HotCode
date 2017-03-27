@@ -2,7 +2,7 @@
  * RepositoryDetail
  * @flow
  **/
-'use strict'
+'use strict';
 
 import React, {Component} from 'react'
 import {
@@ -22,8 +22,8 @@ const TRENDING_URL = 'https://github.com/';
 export default class RepositoryDetail extends Component {
     constructor(props) {
         super(props);
-        let url = props.item.html_url || TRENDING_URL + props.item.fullName;
-        let title = props.item.full_name || props.item.fullName;
+        let url = props.projectModel.item.html_url || TRENDING_URL + props.projectModel.item.fullName;
+        let title = props.projectModel.item.full_name || props.projectModel.item.fullName;
         this.state = {
             url: url,
             canGoBack: false,

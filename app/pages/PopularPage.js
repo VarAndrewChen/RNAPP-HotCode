@@ -2,7 +2,7 @@
  * PopularPage
  * @flow
  **/
-'use strict'
+'use strict';
 
 import React, {Component} from 'react';
 import {
@@ -14,16 +14,20 @@ import {
     DeviceEventEmitter
 } from 'react-native';
 import NavigationBar from '../components/NavigationBar';
-import DataRepository,{FLAG_STORAGE} from '../expand/dao/DataRepository';
+import DataRepository, {FLAG_STORAGE} from '../expand/dao/DataRepository';
 import ScrollableTabView, {ScrollableTabBar} from 'react-native-scrollable-tab-view';
 import RepositoryCell from '../components/RepositoryCell';
 import LanguageDao, {FLAG_LANGUAGE} from '../expand/dao/LanguageDao';
+import FavoriteDao from '../expand/dao/FavoriteDao';
 import RepositoryDetail from './RepositoryDetail';
+import ProjectModel from  '../model/ProjectModel';
+import Utils from '../utils/Utils';
+import ActionUtils from  '../utils/ActionUtils';
 
 //api: https://api.github.com/search/repositories?q=ios&sort=stars
 const URL = 'https://api.github.com/search/repositories?q=';
 const QUERY_STR = '&sort=stars';
-
+const favoriteDao = new FavoriteDao(FLAG_STORAGE.flag_popular);
 
 export default class PopularPage extends Component {
     constructor(props) {
@@ -83,12 +87,43 @@ class PopularTab extends Component {
         this.state = {
             result: '',
             dataSource: new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2}),
-            isLoading: false
+            isLoading: false,
+            favoriteKeys: []
         };
     }
 
     componentDidMount() {
         this._loadData()
+    }
+
+    _flushFavoriteState(items) {
+        if (items) {
+            let projectModels = [];
+            items.map(v => {
+                projectModels.push(new ProjectModel(v, Utils.checkFavorite(v,this.state.favoriteKeys)));
+            });
+            this.setState({
+                isLoading: false,
+                dataSource: this._getDataSource(projectModels)
+            })
+        }
+    }
+
+    _getFavoriteKeys(items) {
+        favoriteDao.getFavoriteKeys()
+            .then(keys => {
+                if (keys){
+                    this.setState({favoriteKeys: keys});
+                }
+                this._flushFavoriteState(items);
+            })
+            .catch(e => {
+                this._flushFavoriteState(items);
+            })
+    }
+
+    _getDataSource(items) {
+        return this.state.dataSource.cloneWithRows(items);
     }
 
     _loadData() {
@@ -99,23 +134,14 @@ class PopularTab extends Component {
         this.dataRepository.fetchRepository(url)
             .then(result => {
                 let items = result && result.items ? result.items : result ? result : [];
-                this.setState({
-                    dataSource: this.state.dataSource.cloneWithRows(items),
-                    isLoading: false
-                });
+                this._getFavoriteKeys(items);
                 if (result && result.update_data && !this.dataRepository.checkDate(result.update_data)) {
-                    DeviceEventEmitter.emit('showToast', '数据已过时');
                     return this.dataRepository.fetchNetRepository(url);
-                } else {
-                    DeviceEventEmitter.emit('showToast', '显示本地数据');
                 }
             })
             .then(items => {
                 if (!items || items.length === 0) return;
-                this.setState({
-                    dataSource: this.state.dataSource.cloneWithRows(items)
-                });
-                DeviceEventEmitter.emit('showToast', '显示网络数据');
+                this._getFavoriteKeys(items);
             })
             .catch(error => this.setState({
                 result: JSON.stringify(error),
@@ -123,26 +149,23 @@ class PopularTab extends Component {
             }));
     }
 
-    onSelect(item) {
-        this.props.navigator.push({
-            component: RepositoryDetail,
-            params: {
-                item: item,
-                ...this.props
-            }
-        })
-    }
 
     _genFetchUrl(key) {
         return URL + key + QUERY_STR;
     }
 
-    _renderRow(rowData) {
-        if (rowData) {
+    _renderRow(projectModel) {
+        if (projectModel) {
             return <RepositoryCell
-                onSelect={() => this.onSelect(rowData)}
-                key={rowData.id}
-                rowData={rowData}/>
+                key={projectModel.item.id}
+                projectModel={projectModel}
+                onSelect={() => ActionUtils.onSelectRepository({
+                    projectModel: projectModel,
+                    flag: FLAG_STORAGE.flag_popular,
+                    ...this.props
+                })}
+                onFavorite={(item, isFavorite) => ActionUtils.onFavorite(favoriteDao,item, isFavorite)}
+            />
         }
     }
 

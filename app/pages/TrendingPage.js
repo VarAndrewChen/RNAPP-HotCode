@@ -2,7 +2,7 @@
  * PopularPage
  * @flow
  **/
-'use strict'
+'use strict';
 
 import React, {Component} from 'react';
 import {
@@ -20,13 +20,16 @@ import DataRepository, {FLAG_STORAGE} from '../expand/dao/DataRepository';
 import ScrollableTabView, {ScrollableTabBar} from 'react-native-scrollable-tab-view';
 import TrendingCell from '../components/TrendingCell';
 import LanguageDao, {FLAG_LANGUAGE} from '../expand/dao/LanguageDao';
+import FavoriteDao from '../expand/dao/FavoriteDao';
 import RepositoryDetail from './RepositoryDetail';
 import Popover from '../components/Popover';
 import TimeSpan from '../model/TimeSpan';
+import ProjectModel from  '../model/ProjectModel';
 
 const TimeSpanTextArray = [new TimeSpan('Today', 'since=daily'), new TimeSpan('This Week', 'since=weekly'), new TimeSpan('This Month', 'since=monthly')];
 const API_URL = 'https://github.com/trending/';
-
+let favoriteDao = new FavoriteDao(FLAG_STORAGE.flag_popular);
+let dataRepository = new DataRepository(FLAG_STORAGE.flag_trending);
 
 export default class TrendingPage extends Component {
     constructor(props) {
@@ -153,11 +156,11 @@ export default class TrendingPage extends Component {
 class TrendingTab extends Component {
     constructor(props) {
         super(props);
-        this.dataRepository = new DataRepository(FLAG_STORAGE.flag_trending);
         this.state = {
             result: '',
             dataSource: new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2}),
-            isLoading: false
+            isLoading: false,
+            favoriteKeys: []
         };
     }
 
@@ -176,16 +179,16 @@ class TrendingTab extends Component {
             isLoading: true
         });
         let url = this._genFetchUrl(timeSpan, this.props.tabLabel);
-        this.dataRepository.fetchRepository(url)
+        dataRepository.fetchRepository(url)
             .then(result => {
                 let items = result && result.item ? result.item : result ? result : [];
                 this.setState({
                     dataSource: this.state.dataSource.cloneWithRows(items),
                     isLoading: false
                 });
-                if (result && result.update_data && !this.dataRepository.checkDate(result.update_data)) {
+                if (result && result.update_data && !dataRepository.checkDate(result.update_data)) {
                     DeviceEventEmitter.emit('showToast', '数据已过时');
-                    return this.dataRepository.fetchNetRepository(url);
+                    return dataRepository.fetchNetRepository(url);
                 } else {
                     DeviceEventEmitter.emit('showToast', '显示缓存数据');
                 }
