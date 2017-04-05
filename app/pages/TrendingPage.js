@@ -25,6 +25,9 @@ import RepositoryDetail from './RepositoryDetail';
 import Popover from '../components/Popover';
 import TimeSpan from '../model/TimeSpan';
 import ProjectModel from  '../model/ProjectModel';
+import Utils from '../utils/Utils';
+import ActionUtils from  '../utils/ActionUtils';
+
 
 const TimeSpanTextArray = [new TimeSpan('Today', 'since=daily'), new TimeSpan('This Week', 'since=weekly'), new TimeSpan('This Month', 'since=monthly')];
 const API_URL = 'https://github.com/trending/';
@@ -182,30 +185,59 @@ class TrendingTab extends Component {
         dataRepository.fetchRepository(url)
             .then(result => {
                 let items = result && result.item ? result.item : result ? result : [];
-                this.setState({
-                    dataSource: this.state.dataSource.cloneWithRows(items),
-                    isLoading: false
-                });
+                this._getFavoriteKeys(items);
                 if (result && result.update_data && !dataRepository.checkDate(result.update_data)) {
                     DeviceEventEmitter.emit('showToast', '数据已过时');
                     return dataRepository.fetchNetRepository(url);
-                } else {
-                    DeviceEventEmitter.emit('showToast', '显示缓存数据');
                 }
             })
             .then(items => {
                 if (!items || items.length === 0) return;
-                this.setState({
-                    dataSource: this.state.dataSource.cloneWithRows(items)
-                });
-                DeviceEventEmitter.emit('showToast', '显示网络数据');
+                this._getFavoriteKeys(items);
             })
             .catch(error => this.setState({
                 result: JSON.stringify(error),
                 isLoading: false
             }));
     }
+    /***
+     * 更新ProjectItems的Favorite状态
+     * @param items
+     * @private
+     */
+    _flushFavoriteState(items) {
+        if (items) {
+            let projectModels = [];
+            items.map(v => {
+                projectModels.push(new ProjectModel(v, Utils.checkFavorite(v,this.state.favoriteKeys)));
+            });
+            this.setState({
+                isLoading: false,
+                dataSource: this._getDataSource(projectModels)
+            })
+        }
+    }
 
+    /***
+     * 获取本地用户收藏的ProjectItems
+     * @param items
+     * @private
+     */
+    _getFavoriteKeys(items) {
+        favoriteDao.getFavoriteKeys()
+            .then(keys => {
+                if (keys){
+                    this.setState({favoriteKeys: keys});
+                }
+                this._flushFavoriteState(items);
+            })
+            .catch(e => {
+                this._flushFavoriteState(items);
+            })
+    }
+    _getDataSource(items) {
+        return this.state.dataSource.cloneWithRows(items);
+    }
     onSelect(item) {
         this.props.navigator.push({
             component: RepositoryDetail,
@@ -220,13 +252,17 @@ class TrendingTab extends Component {
         return API_URL + category + '?' + timeSpan.searchText;
     }
 
-    _renderRow(rowData) {
-        if (rowData) {
-            return <TrendingCell
-                onSelect={() => this.onSelect(rowData)}
-                key={rowData.id}
-                rowData={rowData}/>
-        }
+    _renderRow(projectModel) {
+        return <TrendingCell
+            key={projectModel.item.fullName}
+            projectModel={projectModel}
+            onSelect={()=>ActionUtils.onSelectRepository({
+                projectModel: projectModel,
+                flag: FLAG_STORAGE.flag_trending,
+                ...this.props,
+                onUpdateFavorite: ()=>this.onUpdateFavorite(),
+            })}
+            onFavorite={(item, isFavorite)=>ActionUtils.onFavorite(favoriteDao, item, isFavorite, FLAG_STORAGE.flag_trending)}/>
     }
 
     _onRefresh() {

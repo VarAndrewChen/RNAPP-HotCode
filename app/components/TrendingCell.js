@@ -48,7 +48,7 @@ export default class TrendingCell extends Component {
                 onPress={() => this.onPressFavorite()} underlayColor='transparent'>
                 <Image
                     ref='favoriteIcon'
-                    style={[{width: 22, height: 22,}, this.props.theme.styles.tabBarSelectedIcon]}
+                    style={{width: 22, height: 22,}}
                     source={this.state.favoriteIcon}/>
             </TouchableOpacity> : null;
         let description = '<p>' + item.description + '</p>';
@@ -78,7 +78,7 @@ export default class TrendingCell extends Component {
                                 return <Image
                                     key={i}
                                     style={{width: 22, height: 22, margin: 2}}
-                                    source={{uri: arr[i]}}
+                                    source={{uri: result}}
                                 />
                             })
                             }
@@ -96,31 +96,43 @@ export default class TrendingCell extends Component {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1
+        flex: 1,
+
+    },
+    row: {
+        justifyContent: 'space-between',
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     title: {
         fontSize: 16,
         marginBottom: 2,
-        color: '#212121'
+        color: '#212121',
+        flex: 1
     },
     description: {
         fontSize: 14,
         marginBottom: 2,
-        color: '#757575',
-        borderRadius: 2
+        color: '#757575'
     },
     cell_container: {
+        backgroundColor: 'white',
         padding: 10,
         marginLeft: 5,
         marginRight: 5,
         marginVertical: 3,
-        backgroundColor: 'white',
+        borderColor: '#dddddd',
         borderWidth: 0.5,
-        borderColor: '#ddd',
-        shadowOffset: {width: 0.5, height: 0.5},
+        borderRadius: 2,
         shadowColor: 'gray',
-        shadowOpacity: .4,
+        shadowOffset: {width:0.5, height: 0.5},
+        shadowOpacity: 0.4,
         shadowRadius: 1,
-        elevation: 2
-    }
+        elevation:2
+    },
+    author: {
+        fontSize: 14,
+        marginBottom: 2,
+        color: '#757575'
+    },
 });

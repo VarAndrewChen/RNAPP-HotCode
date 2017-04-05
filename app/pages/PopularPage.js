@@ -19,7 +19,6 @@ import ScrollableTabView, {ScrollableTabBar} from 'react-native-scrollable-tab-v
 import RepositoryCell from '../components/RepositoryCell';
 import LanguageDao, {FLAG_LANGUAGE} from '../expand/dao/LanguageDao';
 import FavoriteDao from '../expand/dao/FavoriteDao';
-import RepositoryDetail from './RepositoryDetail';
 import ProjectModel from  '../model/ProjectModel';
 import Utils from '../utils/Utils';
 import ActionUtils from  '../utils/ActionUtils';
@@ -96,6 +95,11 @@ class PopularTab extends Component {
         this._loadData()
     }
 
+    /***
+     * 更新ProjectItems的Favorite状态
+     * @param items
+     * @private
+     */
     _flushFavoriteState(items) {
         if (items) {
             let projectModels = [];
@@ -109,6 +113,11 @@ class PopularTab extends Component {
         }
     }
 
+    /***
+     * 获取本地用户收藏的ProjectItems
+     * @param items
+     * @private
+     */
     _getFavoriteKeys(items) {
         favoriteDao.getFavoriteKeys()
             .then(keys => {

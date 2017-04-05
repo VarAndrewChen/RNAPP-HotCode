@@ -37,11 +37,11 @@ export default class FavoriteDao{
     updateFavoriteKeys(key,isAdd){
         AsyncStorage.getItem(this.favoriteKey,(error,result)=>{
             if (!error) {
-                let favoriteKeys=[];
+                var favoriteKeys=[];
                 if (result) {
                     favoriteKeys=JSON.parse(result);
                 }
-                let index=favoriteKeys.indexOf(key);
+                var index=favoriteKeys.indexOf(key);
                 if(isAdd){
                     if (index===-1)favoriteKeys.push(key);
                 }else {
@@ -91,7 +91,7 @@ export default class FavoriteDao{
     getAllItems() {
         return new Promise((resolve,reject)=> {
             this.getFavoriteKeys().then((keys)=> {
-                let items = [];
+                var items = [];
                 if (keys) {
                     AsyncStorage.multiGet(keys, (err, stores) => {
                         try {
